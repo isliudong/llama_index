@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seata-server
+  namespace: mysql
+  labels:
+    k8s-app: seata-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: seata-server
+  template:
+    metadata:
+      labels:
+        k8s-app: seata-server
+    spec:
+      containers:
+        - name: seata-server
+          image: docker.io/seataio/seata-server:1.4.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SEATA_CONFIG_NAME
+              value: file:/root/seata-config/registry
+          ports:
+            - name: http
+              containerPort: 8091
+              protocol: TCP
+          volumeMounts:
+            - name: seata-config
+              mountPath: /root/seata-config
+      volumes:
+        - name: seata-config
+          configMap:
+            name: seata-server-config
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: mysql
+  name: seata-server-config
+data:
+  file.conf: |-
+    store {
+      mode = "db"
+      db {
+        datasource = "druid"
+        dbType = "mysql"
+        driverClassName = "com.mysql.cj.jdbc.Driver"
+        url = "jdbc:mysql://172.23.40.65:13306/seata?useUnicode=true&characterEncoding=utf-8&useSSL=false&useInformationSchema=true"
+        user = "hzero"
+        password = "hzero"
+        minConn = 5
+        maxConn = 30
+        globalTable = "global_table"
+        branchTable = "branch_table"
+        lockTable = "lock_table"
+        queryLimit = 100
+        maxWait = 5000
+       }
+    }
+  registry.conf: |-
+    registry {
+      type = "eureka"
+      eureka {
+        application = "seata-server"
+        serviceUrl = "http://register:8000/eureka"
+        weight = "1"
+      }
+    }
+    config {
+      type = "file"
+      file {
+        name = "/root/seata-config/file.conf"
+      }
+    }

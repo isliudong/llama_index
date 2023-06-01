@@ -4,6 +4,9 @@
 pytest==7.2.1
 pytest-dotenv==0.5.2
 
+Flask-Cors==3.0.10
+
+
 # third-party (libraries)
 rake_nltk==1.0.6
 ipython==8.10.0
